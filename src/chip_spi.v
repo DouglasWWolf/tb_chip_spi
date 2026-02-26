@@ -1,0 +1,348 @@
+/*
+
+===============================================================================
+                   ------->  Revision History  <------
+===============================================================================
+
+   Date    Who  Ver  Changes
+===============================================================================
+18-Feb-26  DWW    1  Initial creation
+===============================================================================
+
+This module reads and writes 32-bit words in the sensor-chip via the SPI
+interface.
+
+This assumes that all data sent during SPI transactions is sent MSB first and
+further assumes that the chip clocks in data on rising edges.
+
+*/
+
+
+module chip_spi # (parameter FREQ_HZ = 250000000)
+(
+    input clk, resetn,
+
+    // This is a free-running 10 MHz clock that never stops
+    (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 free_clk CLK" *)
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 10000000" *)
+    output reg free_clk,
+
+    //----------------
+    // User interface    
+    //----------------
+    input     [ 1:0] start,
+    input     [31:0] addr,
+    input     [31:0] wdata,
+    output reg[31:0] rdata,
+    output           busy,
+
+
+    //----------------
+    //  SPI interface    
+    //----------------
+    (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 spi_clk CLK" *)
+    (* X_INTERFACE_PARAMETER = "FREQ_HZ 10000000" *)
+    output     spi_clk,
+    output reg spi_mosi,
+    input      spi_miso,
+    output reg spi_cs_n,
+
+    // An input from the chip-simulator's MISO pin, along
+    // with a way to select is as the MISO input
+    input sim_miso,
+    input sim_select
+);
+
+// Our SPI clock will run at 10 MHz
+localparam SPI_FREQ = 10000000;
+
+// How many system clocks are there per SPI clock?
+localparam SYS_CLK_PER_SPI_CLK = FREQ_HZ / SPI_FREQ;
+
+// How many sys-clock cycles will the SPI clock remain low?
+localparam SYS_CLOCKS_LO = SYS_CLK_PER_SPI_CLK / 2;
+
+// How many sys-clock cycles will the SPI clock remain high?
+localparam SYS_CLOCKS_HI = SYS_CLK_PER_SPI_CLK - SYS_CLOCKS_LO;
+
+// Chip select is active low
+localparam ASSERT_CHIP_SELECT  = 0;
+localparam RELEASE_CHIP_SELECT = 1;
+
+// free_clk cycles between chip-select assertion and first rising edge of spi_clk
+localparam SPI_PORCH = 3;
+
+// The two-bit "start" field will strobe high with one of these values
+localparam START_READ  = 1;
+localparam START_WRITE = 2;
+localparam START_SIM   = 3;
+
+// When sending SPI commands to the chip, these are the opcodes
+localparam[0:0] OP_READ  = 0;
+localparam[0:0] OP_WRITE = 1;
+
+// This tells the chip that we will be sending 32-bits of data
+localparam[0:0] CHIP_SPI_MODE32 = 1'b1;
+
+// This is the SPI register that determines the upper 27 bits of the address
+// in the chip's address space
+localparam[0:0] MAP_SELECT_ON  = 1'b1;
+localparam[0:0] MAP_SELECT_OFF = 1'b0;
+
+
+// The number of spi_clk cycles from:
+//
+// (1) Chip-select assertion to the first rising edge of spi_clk
+// (2) The last falling edge of spi_clk to chip-select release
+// (3) The last rising edge of the 1st transaction to the 1st rising edge
+//     of the 2nd one.
+localparam PORCH_CYCLES = 3;
+
+// Bits are numbered in MSB-to-LSB in the usual manner - 79 down to 0
+// After bit 40 has been sent, we will stretch the spi_clk to provide
+// a gap between transactions.   Similarly, during an SMEM read, we will
+// provide a gap between the address cycles and data cycles of the read.
+localparam TRANSACTION_BOUNDARY = 40;
+localparam READ_DATA_BOUNDARY   = 32;
+
+// Between transactions, we will insert idle free_clk cycles
+localparam TRANSACTION_STRETCH = 3;
+
+// When reading SMEM, we will insert idle free_clk cycles between the 8 bit
+// SPI command and clocking in the 32-bits of data
+localparam SMEM_READ_STRETCH = 4;
+
+//=============================================================================
+// This state machine creates a free-running timer of frequency SPI_FREQ on the
+// output port "free_clk"
+//
+// The flags "rising_edge" and "falling_edge" are asserted on the corresponding
+// edges of free_clk
+//=============================================================================
+reg       rising_edge;
+reg       falling_edge;
+reg[15:0] free_clk_timer;
+//-----------------------------------------------------------------------------
+always @(posedge clk) begin
+
+    // These strobe high for a single cycle at a time
+    rising_edge  <= 0;
+    falling_edge <= 0;
+
+    // If the timer hasn't expired, decrement it
+    if (free_clk_timer) begin
+        free_clk_timer <= free_clk_timer - 1;
+    end
+
+    // Otherwise, the timer has expired and it's time
+    // to invert the free_clk output and restart the timer
+    else begin
+        if (free_clk) begin
+            falling_edge   <= 1;
+            free_clk       <= 0;
+            free_clk_timer <= SYS_CLOCKS_LO - 1;
+        end else begin
+            rising_edge    <= 1;
+            free_clk       <= 1;
+            free_clk_timer <= SYS_CLOCKS_HI - 1;
+        end
+    end
+end
+//=============================================================================
+
+// These are the address, write-data, and operation (read or write) for this
+// transaction
+reg[31:0] user_addr;
+reg[31:0] user_wdata;
+reg       user_op;
+
+// A read/write into the chip's address space requres two 40-bit transactions.
+// The 1st transaction tells the chip what the upper 27 bits of the address
+// will be, while the 2nd transactions provides the lower 5 bits of the address
+// and the 32 bits of data.
+wire[79:0] transaction =
+{
+    // First 40-bit transaction
+    OP_WRITE,               //  1 bit
+    CHIP_SPI_MODE32,        //  1 bit
+    MAP_SELECT_ON,          //  1 bit
+    5'b0,                   //  5 bits
+    5'b0, user_addr[31:5],  // 32 bits
+
+    // Second 40-bit transactions
+    user_op,                //  1 bit
+    CHIP_SPI_MODE32,        //  1 bit
+    MAP_SELECT_OFF,         //  1 bit
+    user_addr[4:0],         //  5 bits
+    user_wdata              // 32 bits
+};
+
+//=============================================================================
+// This is the main state machine.  It drives the spi_clk from free_clk, and
+// is clocks data out on falling edges and clocks data in on rising edges.
+//
+// It includes a mechanism that stretches the clock before reading the first
+// bit of SMEM data.   This is to give the chip time to fetch the required
+// data from SMEM before we start clocking it in.
+//=============================================================================
+
+// A shift register
+reg[79:0] shift_reg;
+
+// Keeps track of the bit number that is currently written to spi_mosi
+reg[6:0] bit_number;
+
+// Counts down the falling edge of free_clk
+reg[3:0] sleep;
+
+// When this is asserted, free_clk is driven out to spi_clk
+wire spi_clk_en;
+
+// The number of free_clk cycles to delay before clocking in data
+reg[3:0] read_stretch;
+
+// This is a count-down timer for simulating SPI transactions
+reg[7:0] sim_delay;
+
+// Is this address in SMEM?
+wire is_smem = (addr >= 32'h8000 && addr <= 32'h107FFF);
+
+// The state of the main finite-state-machine
+reg[2:0] fsm_state;
+localparam FSM_IDLE               = 0;
+localparam FSM_ASSERT_CHIP_SELECT = 1;
+localparam FSM_FRONT_PORCH        = 2;
+localparam FSM_TRANSACT           = 3;
+localparam FSM_BACK_PORCH         = 4;
+localparam FSM_SIM_DELAY          = 5;
+//--------------------------------------------------------------------------
+always @(posedge clk) begin
+
+    // This is a countdown timer that counts falling edges of free_clk
+    if (sleep && falling_edge)
+        sleep <= sleep - 1;
+
+    // If we're in reset, initialize important signals
+    if (resetn == 0) begin
+        fsm_state  <= 0;
+        spi_cs_n   <= RELEASE_CHIP_SELECT;
+    end
+
+    else case(fsm_state)
+    
+        // Wait for someone to tell us to start
+        FSM_IDLE:
+            case (start)
+                START_WRITE:
+                    begin
+                        user_addr    <= addr;
+                        user_wdata   <= wdata;
+                        user_op      <= OP_WRITE;
+                        read_stretch <= 0;
+                        fsm_state    <= FSM_ASSERT_CHIP_SELECT;
+                    end
+
+                START_READ:
+                    begin
+                        user_addr    <= addr;                            
+                        user_wdata   <= 0;
+                        user_op      <= OP_READ;
+                        read_stretch <= (is_smem) ? SMEM_READ_STRETCH : 0; 
+                        fsm_state    <= FSM_ASSERT_CHIP_SELECT; 
+                    end
+                
+                START_SIM:
+                    begin
+                        sim_delay <= 4;
+                        fsm_state <= FSM_SIM_DELAY;
+                    end                   
+            endcase
+
+        // Wait for a falling edge, then assert chip-select, then,
+        // wait for a couple more falling edges
+        FSM_ASSERT_CHIP_SELECT:
+            if (falling_edge) begin
+                spi_cs_n   <= ASSERT_CHIP_SELECT;
+                sleep      <= PORCH_CYCLES;
+                fsm_state  <= FSM_FRONT_PORCH;
+            end
+
+        FSM_FRONT_PORCH:
+            if (sleep == 0) begin
+                spi_mosi   <= transaction[79];
+                shift_reg  <= {transaction[78:0], 1'b0};
+                bit_number <= 79;
+                fsm_state  <= FSM_TRANSACT;
+            end
+        
+        FSM_TRANSACT:
+            if (falling_edge && sleep == 0) begin
+                if (bit_number == TRANSACTION_BOUNDARY)
+                    sleep <= TRANSACTION_STRETCH;
+
+                if (bit_number == READ_DATA_BOUNDARY)
+                    sleep <= read_stretch;
+
+                if (bit_number) begin
+                    spi_mosi   <= shift_reg[79];
+                    shift_reg  <= {shift_reg[78:0],1'b0};
+                    bit_number <= bit_number - 1;
+                end else begin
+                    spi_mosi  <= 0;
+                    sleep     <= PORCH_CYCLES + 2;
+                    fsm_state <= FSM_BACK_PORCH;
+                end
+            end
+
+        // During the back porch, we wait for two free_clk
+        // cycles after chip-select has been released because
+        // we want to ensure that there are time gaps between
+        // consecutive chip regster/SMEM reads/writes.
+        FSM_BACK_PORCH:
+            begin
+                if (sleep == 2) spi_cs_n  <= RELEASE_CHIP_SELECT;
+                if (sleep == 0) fsm_state <= FSM_IDLE;
+            end
+
+        // A "simulation delay" operation just wastes a few clock cycles.
+        // This causes the SPI to appear to be completing transactions
+        // very quickly.  This is convenient for debugging with an ILA when
+        // you want to fit a lot of SPI transactions onto the debugging
+        // screen.
+        FSM_SIM_DELAY:
+            if (sim_delay)
+                sim_delay <= sim_delay - 1;
+            else
+                fsm_state <= FSM_IDLE;
+
+    endcase
+
+end
+
+// spi_clk is enabled during state FSM_TRANSACT while we're not asleep
+assign spi_clk_en = (fsm_state == FSM_TRANSACT) & (sleep == 0);
+
+// spi_clk is driven from the free-running "free_clk"
+assign spi_clk = free_clk & spi_clk_en;
+
+// We're busy as soon as we receive a transaction request
+assign busy = start || (fsm_state != FSM_IDLE);
+//=============================================================================
+
+
+//=============================================================================
+// We clock in data on the rising edge of spi_clk
+//=============================================================================
+always @(posedge clk) begin
+    if (spi_clk & rising_edge) begin
+        if (sim_select)        
+            rdata <= {rdata[30:0], sim_miso};
+        else
+            rdata <= {rdata[30:0], spi_miso};
+    end
+end
+//=============================================================================
+
+
+
+endmodule

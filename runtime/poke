@@ -1,0 +1,33 @@
+row=
+entry=
+value=
+
+axi()
+{
+    pcireg $1 $2 $3 $4    
+}
+
+# Register definitions
+REG_BASE=0x2000
+  REG_ROW=$((REG_BASE + 4 * 0))
+REG_ENTRY=$((REG_BASE + 4 * 1))
+REG_VALUE=$((REG_BASE + 4 * 2))
+REG_START=$((REG_BASE + 4 * 3))
+
+# Fetch the command line parameters
+row=$1;   shift
+entry=$1; shift
+value=$1; shift
+
+# Make sure the entry is a valid number
+if [ -z $entry ] || [ $entry -ge 64 ]; then
+   echo "entry just be 0 thru 63"
+   exit 1
+fi
+
+
+# Poke the specified value into row[entry]
+axi $REG_ROW   $row
+axi $REG_ENTRY $entry
+axi $REG_VALUE $value
+axi $REG_START 1

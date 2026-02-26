@@ -1,0 +1,43 @@
+{
+   "ActiveEmotionalView":"No Loops",
+   "Default View_ScaleFactor":"1.0",
+   "Default View_TopLeft":"-589,-209",
+   "DisplayTieOff":"1",
+   "ExpandedHierarchyInLayout":"",
+   "No Loops_ExpandedHierarchyInLayout":"",
+   "No Loops_Layout":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
+#  -string -flagsOSRD
+preplace port port-id_clk -pg 1 -lvl 0 -x 0 -y 80 -defaultsOSRD
+preplace port port-id_resetn -pg 1 -lvl 0 -x 0 -y 100 -defaultsOSRD
+preplace port port-id_hsi_clk_in -pg 1 -lvl 0 -x 0 -y 260 -defaultsOSRD
+preplace port port-id_hsi_valid -pg 1 -lvl 2 -x 380 -y 260 -defaultsOSRD
+preplace port port-id_hsi_clk -pg 1 -lvl 2 -x 380 -y 320 -defaultsOSRD
+preplace portBus hsi_data -pg 1 -lvl 2 -x 380 -y 220 -defaultsOSRD
+preplace portBus hsi_cmd -pg 1 -lvl 2 -x 380 -y 240 -defaultsOSRD
+preplace inst axis_data_fifo_0 -pg 1 -lvl 1 -x 200 -y 200 -swap {0 1 2 3 4 5 6 7 8 9 11 10 12} -defaultsOSRD -pinDir S_AXIS left -pinY S_AXIS 0L -pinDir M_AXIS right -pinY M_AXIS 0R -pinDir M_AXIS.m_axis_tdata right -pinY M_AXIS.m_axis_tdata 20R -pinDir M_AXIS.m_axis_tuser right -pinY M_AXIS.m_axis_tuser 40R -pinDir M_AXIS.m_axis_tvalid right -pinY M_AXIS.m_axis_tvalid 60R -pinDir s_axis_aresetn left -pinY s_axis_aresetn 40L -pinDir s_axis_aclk left -pinY s_axis_aclk 20L -pinDir m_axis_aclk left -pinY m_axis_aclk 60L
+preplace netloc axis_data_fifo_0_m_axis_tdata 1 1 1 NJ 220
+preplace netloc axis_data_fifo_0_m_axis_tuser 1 1 1 NJ 240
+preplace netloc axis_data_fifo_0_m_axis_tvalid 1 1 1 NJ 260
+preplace netloc m_axis_aclk_1 1 0 2 40 320 NJ
+preplace netloc source_100mhz_sys_clk 1 0 1 40 80n
+preplace netloc source_100mhz_sys_resetn 1 0 1 20 100n
+levelinfo -pg 1 0 200 380
+pagesize -pg 1 -db -bbox -sgen -120 -20 540 340
+",
+   "No Loops_ScaleFactor":"1.0",
+   "No Loops_TopLeft":"-520,-190",
+   "guistr":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
+#  -string -flagsOSRD
+preplace port axis_out -pg 1 -lvl 2 -x 280 -y 60 -defaultsOSRD
+preplace port S_AXI -pg 1 -lvl 0 -x 0 -y 50 -defaultsOSRD
+preplace port port-id_clk -pg 1 -lvl 0 -x 0 -y 70 -defaultsOSRD
+preplace port port-id_resetn -pg 1 -lvl 0 -x 0 -y 90 -defaultsOSRD
+preplace inst hsi_ctl -pg 1 -lvl 1 -x 140 -y 70 -defaultsOSRD
+preplace netloc source_100mhz_sys_clk 1 0 1 NJ 70
+preplace netloc source_100mhz_sys_resetn 1 0 1 NJ 90
+preplace netloc system_interconnect_M02_AXI 1 0 1 NJ 50
+levelinfo -pg 1 0 140 280
+pagesize -pg 1 -db -bbox -sgen -100 -10 390 150
+"
+}
+0

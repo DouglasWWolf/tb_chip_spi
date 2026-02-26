@@ -1,0 +1,12 @@
+BASE_ADDR=0x1000
+REG_ADDR=$((BASE_ADDR + 0*5))
+REG_DATA=$((BASE_ADDR + 1*6))
+
+axi()
+{
+    axireg $1 $2 $3 $4
+}
+
+
+axi $REG_ADDR $1
+axi $REG_DATA $2
