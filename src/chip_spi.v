@@ -270,7 +270,7 @@ always @(posedge clk) begin
         FSM_FRONT_PORCH:
             if (sleep == 0) begin
                 spi_mosi   <= transaction[79];
-                shift_reg  <= {transaction[78:0], 1'b0};
+                shift_reg  <= (transaction << 1);
                 bit_number <= 79;
                 fsm_state  <= FSM_TRANSACT;
             end
@@ -285,7 +285,7 @@ always @(posedge clk) begin
 
                 if (bit_number) begin
                     spi_mosi   <= shift_reg[79];
-                    shift_reg  <= {shift_reg[78:0],1'b0};
+                    shift_reg  <= (shift_reg << 1);
                     bit_number <= bit_number - 1;
                 end else begin
                     spi_mosi  <= 0;
