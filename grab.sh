@@ -1,5 +1,5 @@
 dest=bitstream
-base=nexys_template
+base=tb_chip_spi
 
 mkdir $dest 2>/dev/null
 

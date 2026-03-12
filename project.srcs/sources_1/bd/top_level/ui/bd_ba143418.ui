@@ -17,8 +17,8 @@ preplace inst system_reset -pg 1 -lvl 2 -x 430 -y 60 -swap {4 0 1 2 3 6 7 8 9 5}
 preplace netloc clk_in1_0_1 1 0 1 NJ 200
 preplace netloc ext_reset_in_0_1 1 0 2 NJ 60 NJ
 preplace netloc system_clock_clk_100mhz 1 1 2 240 200 NJ
-preplace netloc system_reset_peripheral_aresetn 1 2 1 NJ 60
 preplace netloc system_clock_hsi_clk 1 1 2 NJ 220 NJ
+preplace netloc system_reset_peripheral_aresetn 1 2 1 NJ 60
 levelinfo -pg 1 0 130 430 630
 pagesize -pg 1 -db -bbox -sgen -120 0 790 280
 ",

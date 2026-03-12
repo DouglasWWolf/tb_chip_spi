@@ -15,17 +15,28 @@ interface.
 This assumes that all data sent during SPI transactions is sent MSB first and
 further assumes that the chip clocks in data on rising edges.
 
+The SPI clock is synchronous to a free-running clock that is obtained
+by dividing "hsi_clk" by 8 then synchronizing it to "clk".   The neccessity
+of the SPI clock running no faster than "hsi_clk / 8" is dictated by the
+sensor-chip
+
 */
 
 
 module chip_spi # (parameter FREQ_HZ = 250000000)
 (
+
+    // This is the HSI clock, running faster than 80 MHz.  We will divide it down
+    // by a factor of 8, meaning the divided down clock will never be faster than
+    // 10 MHz.
+    input hsi_clk,
+
     input clk, resetn,
 
-    // This is a free-running 10 MHz clock that never stops
+    // This is a free-running clock that never stops.  It is synchronous to clk
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 free_clk CLK" *)
     (* X_INTERFACE_PARAMETER = "FREQ_HZ 10000000" *)
-    output reg free_clk,
+    output free_clk,
 
     //----------------
     // User interface    
@@ -113,42 +124,14 @@ localparam TRANSACTION_STRETCH = 3;
 localparam SMEM_READ_STRETCH = 4;
 
 //=============================================================================
-// This state machine creates a free-running timer of frequency SPI_FREQ on the
-// output port "free_clk"
-//
-// The flags "rising_edge" and "falling_edge" are asserted on the corresponding
-// edges of free_clk
+// We need to do edge detection on "free_clk"
 //=============================================================================
-reg       rising_edge;
-reg       falling_edge;
-reg[15:0] free_clk_timer;
-//-----------------------------------------------------------------------------
-always @(posedge clk) begin
-
-    // These strobe high for a single cycle at a time
-    rising_edge  <= 0;
-    falling_edge <= 0;
-
-    // If the timer hasn't expired, decrement it
-    if (free_clk_timer) begin
-        free_clk_timer <= free_clk_timer - 1;
-    end
-
-    // Otherwise, the timer has expired and it's time
-    // to invert the free_clk output and restart the timer
-    else begin
-        if (free_clk) begin
-            falling_edge   <= 1;
-            free_clk       <= 0;
-            free_clk_timer <= SYS_CLOCKS_LO - 1;
-        end else begin
-            rising_edge    <= 1;
-            free_clk       <= 1;
-            free_clk_timer <= SYS_CLOCKS_HI - 1;
-        end
-    end
-end
+reg prior_free_clk;
+always @(posedge clk) prior_free_clk <= free_clk;
+wire rising_edge  = (prior_free_clk == 0) & (free_clk == 1);
+wire falling_edge = (prior_free_clk == 1) & (free_clk == 0);
 //=============================================================================
+
 
 // These are the address, write-data, and operation (read or write) for this
 // transaction
@@ -341,6 +324,43 @@ always @(posedge clk) begin
             rdata <= {rdata[30:0], spi_miso};
     end
 end
+//=============================================================================
+
+
+//=============================================================================
+// Here we divide hsi_clk by 8
+// Everything in this state machine is synchonous to hsi_clk
+//=============================================================================
+reg hsi_clk_div_8;
+reg [1:0] hsi_clk_countdown;
+always @(posedge hsi_clk) begin
+    if (hsi_clk_countdown)
+        hsi_clk_countdown <= hsi_clk_countdown - 1;
+    else begin
+        hsi_clk_div_8     <= ~hsi_clk_div_8;
+        hsi_clk_countdown <= 3;
+    end
+end
+//=============================================================================
+
+
+//=============================================================================
+// "free_clk" is the hsi_clk_div_8, but synchronized to "clk"
+//=============================================================================
+xpm_cdc_single #
+(
+    .DEST_SYNC_FF  (4),
+    .INIT_SYNC_FF  (0),
+    .SIM_ASSERT_CHK(0),
+    .SRC_INPUT_REG (0)
+)
+xpm_cdc_free_clk
+(
+    .src_clk (             ),
+    .src_in  (hsi_clk_div_8),
+    .dest_clk(clk          ),
+    .dest_out(free_clk     )
+);
 //=============================================================================
 
 

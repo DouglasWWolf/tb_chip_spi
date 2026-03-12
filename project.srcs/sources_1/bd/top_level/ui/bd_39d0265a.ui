@@ -12,19 +12,19 @@
    "No Loops_Layers":"/chip_spi_free_clk:true|/chip_spi_spi_clk:true|/source_100mhz/system_clock_clk_100mhz:true|/clk_in1_0_1:true|/source_100mhz/system_reset_peripheral_aresetn:true|/ext_reset_in_0_1:true|/source_100mhz/system_clock_hsi_clk:true|",
    "No Loops_Layout":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
 #  -string -flagsOSRD
-preplace port UART -pg 1 -lvl 0 -x 0 -y 430 -defaultsOSRD -left
-preplace port port-id_CLK100MHZ -pg 1 -lvl 0 -x 0 -y 560 -defaultsOSRD
-preplace port port-id_CPU_RESETN -pg 1 -lvl 0 -x 0 -y 580 -defaultsOSRD
-preplace inst source_100mhz -pg 1 -lvl 1 -x 140 -y 560 -swap {0 1 3 2 4} -defaultsOSRD -pinDir clk_in left -pinY clk_in 0L -pinDir resetn_in left -pinY resetn_in 20L -pinDir sys_clk right -pinY sys_clk 20R -pinBusDir sys_resetn right -pinBusY sys_resetn 0R -pinDir hsi_clk right -pinY hsi_clk 40R
-preplace inst uart_axi_bridge -pg 1 -lvl 1 -x 140 -y 430 -defaultsOSRD -pinDir UART left -pinY UART 0L -pinDir M_AXI right -pinY M_AXI 0R -pinDir s_axi_aclk right -pinY s_axi_aclk 20R -pinDir s_axi_aresetn right -pinY s_axi_aresetn 40R
-preplace inst system_interconnect -pg 1 -lvl 2 -x 420 -y 100 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 40 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 20 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81} -defaultsOSRD -pinDir S00_AXI left -pinY S00_AXI 330L -pinDir M00_AXI right -pinY M00_AXI 180R -pinDir M01_AXI right -pinY M01_AXI 0R -pinDir M02_AXI right -pinY M02_AXI 370R -pinDir aclk left -pinY aclk 350L -pinDir aresetn left -pinY aresetn 370L
+preplace port UART -pg 1 -lvl 0 -x 0 -y 450 -defaultsOSRD -left
+preplace port port-id_CLK100MHZ -pg 1 -lvl 0 -x 0 -y 580 -defaultsOSRD
+preplace port port-id_CPU_RESETN -pg 1 -lvl 0 -x 0 -y 600 -defaultsOSRD
+preplace inst source_100mhz -pg 1 -lvl 1 -x 140 -y 580 -swap {0 1 3 2 4} -defaultsOSRD -pinDir clk_in left -pinY clk_in 0L -pinDir resetn_in left -pinY resetn_in 20L -pinDir sys_clk right -pinY sys_clk 20R -pinBusDir sys_resetn right -pinBusY sys_resetn 0R -pinDir hsi_clk right -pinY hsi_clk 40R
+preplace inst uart_axi_bridge -pg 1 -lvl 1 -x 140 -y 450 -defaultsOSRD -pinDir UART left -pinY UART 0L -pinDir M_AXI right -pinY M_AXI 0R -pinDir s_axi_aclk right -pinY s_axi_aclk 20R -pinDir s_axi_aresetn right -pinY s_axi_aresetn 40R
+preplace inst system_interconnect -pg 1 -lvl 2 -x 420 -y 100 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 40 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 20 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81} -defaultsOSRD -pinDir S00_AXI left -pinY S00_AXI 350L -pinDir M00_AXI right -pinY M00_AXI 180R -pinDir M01_AXI right -pinY M01_AXI 0R -pinDir M02_AXI right -pinY M02_AXI 390R -pinDir aclk left -pinY aclk 370L -pinDir aresetn left -pinY aresetn 390L
 preplace inst chip_spi_ctl_0 -pg 1 -lvl 3 -x 730 -y 240 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 20 24 22 25 23 26} -defaultsOSRD -pinDir S_AXI left -pinY S_AXI 40L -pinDir clk left -pinY clk 80L -pinDir resetn left -pinY resetn 60L -pinBusDir addr right -pinBusY addr 40R -pinBusDir wdata right -pinBusY wdata 0R -pinBusDir start_stb right -pinBusY start_stb 60R -pinDir busy right -pinY busy 20R -pinBusDir rdata right -pinBusY rdata 80R
 preplace inst chip_spi_ctl_1 -pg 1 -lvl 3 -x 730 -y 60 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 20 26 24 22 25 23} -defaultsOSRD -pinDir S_AXI left -pinY S_AXI 40L -pinDir clk left -pinY clk 80L -pinDir resetn left -pinY resetn 60L -pinBusDir addr right -pinBusY addr 80R -pinBusDir wdata right -pinBusY wdata 40R -pinBusDir start_stb right -pinBusY start_stb 0R -pinDir busy right -pinY busy 60R -pinBusDir rdata right -pinBusY rdata 20R
 preplace inst chip_spi_mux -pg 1 -lvl 4 -x 1070 -y 60 -swap {11 10 8 0 7 4 5 2 9 1 6 3 12 13 15 16 14} -defaultsOSRD -pinDir clk left -pinY clk 300L -pinDir resetn left -pinY resetn 280L -pinBusDir start_stb_0 left -pinBusY start_stb_0 240L -pinBusDir start_stb_1 left -pinBusY start_stb_1 0L -pinBusDir addr_0 left -pinBusY addr_0 220L -pinBusDir addr_1 left -pinBusY addr_1 80L -pinBusDir wdata_0 left -pinBusY wdata_0 180L -pinBusDir wdata_1 left -pinBusY wdata_1 40L -pinBusDir rdata_0 left -pinBusY rdata_0 260L -pinBusDir rdata_1 left -pinBusY rdata_1 20L -pinDir busy_0 left -pinY busy_0 200L -pinDir busy_1 left -pinY busy_1 60L -pinBusDir spi_start_stb right -pinBusY spi_start_stb 220R -pinBusDir spi_addr right -pinBusY spi_addr 240R -pinBusDir spi_wdata right -pinBusY spi_wdata 280R -pinBusDir spi_rdata right -pinBusY spi_rdata 300R -pinDir spi_busy right -pinY spi_busy 260R
-preplace inst chip -pg 1 -lvl 6 -x 1620 -y 360 -swap {7 0 5 3 2 4 6 10 11 9 8 1} -defaultsOSRD -pinDir clk left -pinY clk 180L -pinDir spi_cs_n left -pinY spi_cs_n 0L -pinDir spi_clk left -pinY spi_clk 100L -pinDir spi_mosi left -pinY spi_mosi 60L -pinDir sim_miso left -pinY sim_miso 40L -pinBusDir spi_free_clk left -pinBusY spi_free_clk 80L -pinDir resetn left -pinY resetn 160L -pinDir hsi_clk left -pinY hsi_clk 260L -pinBusDir hsi_data left -pinBusY hsi_data 280L -pinBusDir hsi_cmd left -pinBusY hsi_cmd 240L -pinBusDir hsi_valid left -pinBusY hsi_valid 200L -pinBusDir spi_miso left -pinBusY spi_miso 20L
-preplace inst hsi_ctl -pg 1 -lvl 3 -x 730 -y 420 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 23 21 22 20 26 25 24} -defaultsOSRD -pinDir S_AXI left -pinY S_AXI 50L -pinDir clk left -pinY clk 220L -pinDir resetn left -pinY resetn 200L -pinDir sim_select right -pinY sim_select 0R -pinDir hsi_clk left -pinY hsi_clk 180L -pinBusDir hsi_data right -pinBusY hsi_data 220R -pinDir hsi_cmd right -pinY hsi_cmd 180R -pinDir hsi_valid right -pinY hsi_valid 140R
-preplace inst chip_spi -pg 1 -lvl 5 -x 1390 -y 280 -swap {13 7 11 0 1 4 5 3 12 10 8 2 9 6} -defaultsOSRD -pinDir clk left -pinY clk 180L -pinDir resetn left -pinY resetn 160L -pinDir free_clk right -pinY free_clk 160R -pinBusDir start left -pinBusY start 0L -pinBusDir addr left -pinBusY addr 20L -pinBusDir wdata left -pinBusY wdata 60L -pinBusDir rdata left -pinBusY rdata 80L -pinDir busy left -pinY busy 40L -pinDir spi_clk right -pinY spi_clk 180R -pinDir spi_mosi right -pinY spi_mosi 140R -pinDir spi_miso right -pinY spi_miso 100R -pinDir spi_cs_n right -pinY spi_cs_n 80R -pinDir sim_miso right -pinY sim_miso 120R -pinDir sim_select left -pinY sim_select 140L
-preplace netloc chip_sim_miso 1 5 1 NJ 400
+preplace inst chip -pg 1 -lvl 6 -x 1640 -y 380 -swap {7 0 5 3 2 4 6 10 11 9 8 1} -defaultsOSRD -pinDir clk left -pinY clk 180L -pinDir spi_cs_n left -pinY spi_cs_n 0L -pinDir spi_clk left -pinY spi_clk 100L -pinDir spi_mosi left -pinY spi_mosi 60L -pinDir sim_miso left -pinY sim_miso 40L -pinBusDir spi_free_clk left -pinBusY spi_free_clk 80L -pinDir resetn left -pinY resetn 160L -pinDir hsi_clk left -pinY hsi_clk 260L -pinBusDir hsi_data left -pinBusY hsi_data 280L -pinBusDir hsi_cmd left -pinBusY hsi_cmd 240L -pinBusDir hsi_valid left -pinBusY hsi_valid 200L -pinBusDir spi_miso left -pinBusY spi_miso 20L
+preplace inst hsi_ctl -pg 1 -lvl 3 -x 730 -y 420 -swap {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 23 21 22 20 26 25 24} -defaultsOSRD -pinDir S_AXI left -pinY S_AXI 70L -pinDir clk left -pinY clk 240L -pinDir resetn left -pinY resetn 220L -pinDir sim_select right -pinY sim_select 0R -pinDir hsi_clk left -pinY hsi_clk 200L -pinBusDir hsi_data right -pinBusY hsi_data 240R -pinDir hsi_cmd right -pinY hsi_cmd 200R -pinDir hsi_valid right -pinY hsi_valid 160R
+preplace inst chip_spi -pg 1 -lvl 5 -x 1410 -y 280 -swap {8 14 7 12 0 1 4 5 2 13 11 9 3 10 6} -defaultsOSRD -pinDir hsi_clk left -pinY hsi_clk 180L -pinDir clk left -pinY clk 200L -pinDir resetn left -pinY resetn 160L -pinDir free_clk right -pinY free_clk 180R -pinBusDir start left -pinBusY start 0L -pinBusDir addr left -pinBusY addr 20L -pinBusDir wdata left -pinBusY wdata 60L -pinBusDir rdata left -pinBusY rdata 80L -pinDir busy left -pinY busy 40L -pinDir spi_clk right -pinY spi_clk 200R -pinDir spi_mosi right -pinY spi_mosi 160R -pinDir spi_miso right -pinY spi_miso 120R -pinDir spi_cs_n right -pinY spi_cs_n 100R -pinDir sim_miso right -pinY sim_miso 140R -pinDir sim_select left -pinY sim_select 140L
+preplace netloc chip_sim_miso 1 5 1 NJ 420
 preplace netloc chip_spi_busy 1 4 1 N 320
 preplace netloc chip_spi_ctl_1_addr 1 3 1 N 140
 preplace netloc chip_spi_ctl_1_start 1 3 1 N 60
@@ -32,8 +32,8 @@ preplace netloc chip_spi_ctl_1_wdata 1 3 1 N 100
 preplace netloc chip_spi_ctl_addr 1 3 1 N 280
 preplace netloc chip_spi_ctl_start 1 3 1 N 300
 preplace netloc chip_spi_ctl_wdata 1 3 1 N 240
-preplace netloc chip_spi_free_clk 1 5 1 N 440
-preplace netloc chip_spi_miso 1 5 1 NJ 380
+preplace netloc chip_spi_free_clk 1 5 1 N 460
+preplace netloc chip_spi_miso 1 5 1 NJ 400
 preplace netloc chip_spi_mux_addr 1 4 1 N 300
 preplace netloc chip_spi_mux_busy_0 1 3 1 N 260
 preplace netloc chip_spi_mux_busy_1 1 3 1 N 120
@@ -42,30 +42,30 @@ preplace netloc chip_spi_mux_rdata_1 1 3 1 N 80
 preplace netloc chip_spi_mux_start 1 4 1 N 280
 preplace netloc chip_spi_mux_wdata 1 4 1 N 340
 preplace netloc chip_spi_rdata 1 4 1 N 360
-preplace netloc chip_spi_spi_clk 1 5 1 N 460
-preplace netloc chip_spi_spi_cs_n 1 5 1 N 360
-preplace netloc clk_in1_0_1 1 0 1 NJ 560
-preplace netloc ext_reset_in_0_1 1 0 1 NJ 580
-preplace netloc hsi_ctl_hsi_cmd 1 3 3 N 600 N 600 N
-preplace netloc hsi_ctl_hsi_data 1 3 3 N 640 N 640 N
-preplace netloc hsi_ctl_hsi_valid 1 3 3 N 560 N 560 N
+preplace netloc chip_spi_spi_clk 1 5 1 N 480
+preplace netloc chip_spi_spi_cs_n 1 5 1 N 380
+preplace netloc clk_in1_0_1 1 0 1 NJ 580
+preplace netloc ext_reset_in_0_1 1 0 1 NJ 600
+preplace netloc hsi_ctl_hsi_cmd 1 3 3 N 620 N 620 N
+preplace netloc hsi_ctl_hsi_data 1 3 3 N 660 N 660 N
+preplace netloc hsi_ctl_hsi_valid 1 3 3 N 580 N 580 N
 preplace netloc hsi_ctl_sim_select 1 3 2 N 420 NJ
-preplace netloc source_100mhz_hsi_clk 1 1 5 N 600 560 740 900 620 N 620 N
-preplace netloc source_100mhz_sys_clk 1 1 5 280 640 600 720 880 660 1260 540 N
-preplace netloc source_100mhz_sys_resetn 1 1 5 260 620 580 700 860 580 1240 520 N
-preplace netloc spi_mosi_1 1 5 1 N 420
-preplace netloc axi_uartlite_UART 1 0 1 NJ 430
+preplace netloc source_100mhz_hsi_clk 1 1 5 N 620 560 760 900 640 1260 640 N
+preplace netloc source_100mhz_sys_clk 1 1 5 280 660 600 740 880 680 1280 560 N
+preplace netloc source_100mhz_sys_resetn 1 1 5 260 640 580 720 860 600 1240 540 N
+preplace netloc spi_mosi_1 1 5 1 N 440
+preplace netloc axi_uartlite_UART 1 0 1 NJ 450
 preplace netloc system_interconnect_M00_AXI 1 2 1 N 280
 preplace netloc system_interconnect_M01_AXI 1 2 1 N 100
-preplace netloc system_interconnect_M02_AXI 1 2 1 N 470
-preplace netloc uart_axi_bridge_M_AXI 1 1 1 N 430
-levelinfo -pg 1 0 140 420 730 1070 1390 1620 1720
-pagesize -pg 1 -db -bbox -sgen -150 0 1720 750
+preplace netloc system_interconnect_M02_AXI 1 2 1 N 490
+preplace netloc uart_axi_bridge_M_AXI 1 1 1 N 450
+levelinfo -pg 1 0 140 420 730 1070 1410 1640 1740
+pagesize -pg 1 -db -bbox -sgen -150 0 1740 770
 ",
    "No Loops_PinnedBlocks":"",
    "No Loops_PinnedPorts":"",
-   "No Loops_ScaleFactor":"0.854289",
-   "No Loops_TopLeft":"-142,-103",
+   "No Loops_ScaleFactor":"0.772582",
+   "No Loops_TopLeft":"-142,-69",
    "guistr":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
 #  -string -flagsOSRD
 preplace port port-id_CLK100MHZ -pg 1 -lvl 0 -x -10 -y -200 -defaultsOSRD
