@@ -23,7 +23,7 @@ sensor-chip
 */
 
 
-module chip_spi # (parameter FREQ_HZ = 250000000)
+module chip_spi 
 (
 
     // This is the HSI clock, running no faster than 80 MHz.  We will divide it down
