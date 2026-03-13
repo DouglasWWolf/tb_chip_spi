@@ -59,8 +59,8 @@ preplace netloc system_interconnect_M00_AXI 1 2 1 N 280
 preplace netloc system_interconnect_M01_AXI 1 2 1 N 100
 preplace netloc system_interconnect_M02_AXI 1 2 1 N 490
 preplace netloc uart_axi_bridge_M_AXI 1 1 1 N 450
-levelinfo -pg 1 0 140 420 730 1070 1410 1640 1740
-pagesize -pg 1 -db -bbox -sgen -150 0 1740 770
+levelinfo -pg 1 0 140 420 730 1070 1410 1640 1750
+pagesize -pg 1 -db -bbox -sgen -150 0 1750 770
 ",
    "No Loops_PinnedBlocks":"",
    "No Loops_PinnedPorts":"",

@@ -26,7 +26,7 @@ sensor-chip
 module chip_spi # (parameter FREQ_HZ = 250000000)
 (
 
-    // This is the HSI clock, running faster than 80 MHz.  We will divide it down
+    // This is the HSI clock, running no faster than 80 MHz.  We will divide it down
     // by a factor of 8, meaning the divided down clock will never be faster than
     // 10 MHz.
     input hsi_clk,
@@ -64,24 +64,10 @@ module chip_spi # (parameter FREQ_HZ = 250000000)
     input sim_select
 );
 
-// Our SPI clock will run at 10 MHz
-localparam SPI_FREQ = 10000000;
-
-// How many system clocks are there per SPI clock?
-localparam SYS_CLK_PER_SPI_CLK = FREQ_HZ / SPI_FREQ;
-
-// How many sys-clock cycles will the SPI clock remain low?
-localparam SYS_CLOCKS_LO = SYS_CLK_PER_SPI_CLK / 2;
-
-// How many sys-clock cycles will the SPI clock remain high?
-localparam SYS_CLOCKS_HI = SYS_CLK_PER_SPI_CLK - SYS_CLOCKS_LO;
 
 // Chip select is active low
 localparam ASSERT_CHIP_SELECT  = 0;
 localparam RELEASE_CHIP_SELECT = 1;
-
-// free_clk cycles between chip-select assertion and first rising edge of spi_clk
-localparam SPI_PORCH = 3;
 
 // The two-bit "start" field will strobe high with one of these values
 localparam START_READ  = 1;
