@@ -117,11 +117,6 @@ localparam TRANSACTION_SUSPEND = 2;
 // command-byte and the 32 "data" cycles.
 localparam READ_DATA_BOUNDARY = 32;
 
-// When reading SMEM, we stretch the 8th spi_clk by this many free_clk cycles.
-// We do this in order to give the sensor-chip a chance to read SMEM prior to
-// clocking out the SMEM value to us.
-localparam SMEM_READ_STRETCH = 1;
-
 //=============================================================================
 // This function swaps big-endian to little-endian or vice-versa
 //=============================================================================
@@ -186,7 +181,7 @@ reg[6:0] bit_number;
 reg[2:0] sleep, suspend_counter;
 
 // This counts down the rising edges of free_clk
-reg[2:0] stretch_counter;
+reg[1:0] stretch_counter;
 
 // Keep track of whether spi_clk is current stretched or suspended
 wire spi_clk_suspended = (suspend_counter != 0);
@@ -195,14 +190,11 @@ wire spi_clk_stretched = (stretch_counter != 0);
 // When this is asserted, free_clk is driven out to spi_clk
 wire spi_clk_en;
 
-// The number of free_clk cycles to delay before clocking in data
-reg[3:0] read_stretch;
-
 // This is a count-down timer for simulating SPI transactions
 reg[7:0] sim_delay;
 
-// Is this address in SMEM?
-wire is_smem = (addr >= 32'h8000 && addr <= 32'h107FFF);
+// Are we reading from the sensor-chip's SMEM area?
+reg is_smem_read;
 
 // The state of the main finite-state-machine
 reg[2:0] fsm_state;
@@ -245,7 +237,7 @@ always @(posedge clk) begin
                         user_addr    <= addr;
                         user_wdata   <= wdata;
                         user_op      <= OP_WRITE;
-                        read_stretch <= 0;
+                        is_smem_read <= 0;
                         fsm_state    <= FSM_ASSERT_CHIP_SELECT;
                     end
 
@@ -254,7 +246,7 @@ always @(posedge clk) begin
                         user_addr    <= addr;                            
                         user_wdata   <= 0;
                         user_op      <= OP_READ;
-                        read_stretch <= (is_smem) ? SMEM_READ_STRETCH : 0; 
+                        is_smem_read <= (addr >= 32'h8000 && addr <= 32'h107FFF);
                         fsm_state    <= FSM_ASSERT_CHIP_SELECT; 
                     end
                 
@@ -285,11 +277,14 @@ always @(posedge clk) begin
         FSM_TRANSACT:
 
             // If this is the rising edge of the 8th bit (on the 2nd transaction)
-            // then we need to ensure that spi_clk remains high for some number
-            // of free_clk cycles. 
-            if (rising_edge && bit_number == READ_DATA_BOUNDARY && !spi_clk_stretched) begin
-                stretch_counter <= read_stretch;
-            end
+            // then we need to ensure that spi_clk remains high for an extra
+            // free_clk cycle. 
+            if (is_smem_read && rising_edge
+                             && bit_number == READ_DATA_BOUNDARY
+                             && !spi_clk_stretched)
+                begin
+                    stretch_counter <= 1;
+                end
 
             // On falling edges we clock out a new bit to spi_mosi
             else if (falling_edge & !spi_clk_stretched & !spi_clk_suspended) begin
