@@ -27,6 +27,16 @@ wire       fifo_out_tvalid;
 reg[31:0] reg_space [0:ARRAY_SIZE-1];
 reg[31:0] smem_space[0:ARRAY_SIZE-1];
 
+
+//=============================================================================
+// This function swaps big-endian to little-endian or vice-versa
+//=============================================================================
+function [31:0] byte_swap (input [31:0] value);
+    byte_swap = {value[7:0], value[15:8], value[23:16], value[31:24]};
+endfunction
+//=============================================================================
+
+
 //=============================================================================
 // State machine that writes to "smem_space"
 //=============================================================================
@@ -79,7 +89,7 @@ wire rising_edge, falling_edge;
 reg [7:0] command;
 reg[31:0] wdata;
 reg[31:0] rdata;
-reg[26:0] upper27;
+reg[31:0] upper27;
 
 wire      op         = command[7];
 wire      mode       = command[6];
@@ -87,7 +97,7 @@ wire      map_select = command[5];
 wire[4:0] lower5     = command[4:0];
 
 // This is the chip-space address we're going to read or write
-wire[31:0] address = {upper27, lower5};
+wire[31:0] address = {upper27[26:0], lower5};
 
 // In the case of an SMEM access, this is the offset into SMEM
 wire[31:0] smem_offset = address - 32'h8000;
@@ -113,7 +123,7 @@ end
 
 
 //=============================================================================
-// Clock bits into either the "command" register or the "rdata" register
+// Clock bits into either the "command" register or the "wdata" register
 //=============================================================================
 always @(posedge clk) begin
 
@@ -140,14 +150,14 @@ always @(posedge clk) begin
     smem_write_stb[0] <= 0;
     if (falling_edge && bit_count == 40 && op == OP_WRITE) begin
         if (map_select)
-            upper27 <= wdata[26:0];
+            upper27 <= byte_swap(wdata);
         else if (addr_index < ARRAY_SIZE) begin
             if (is_smem) begin
                 smem_write_index[0] <= addr_index;
-                smem_write_word [0] <= wdata;
+                smem_write_word [0] <= byte_swap(wdata);
                 smem_write_stb  [0] <= 1;
             end else
-                reg_space[addr_index]  <= wdata;
+                reg_space[addr_index] <= byte_swap(wdata);
         end
     end
 end
@@ -167,9 +177,9 @@ always @(posedge clk) begin
             if (map_select)
                 rdata <= 0;
             else if (is_smem) begin
-                rdata <= smem_space[addr_index];
+                rdata <= byte_swap(smem_space[addr_index]);
             end else begin
-                rdata <=  reg_space[addr_index];
+                rdata <= byte_swap(reg_space[addr_index]);
             end
         end
 

@@ -20,6 +20,18 @@ by dividing "hsi_clk" by 8 then synchronizing it to "clk".   The neccessity
 of the SPI clock running no faster than "hsi_clk / 8" is dictated by the
 sensor-chip
 
+A single register or SMEM read/write consists of two 40-bit transactions, each
+of those consisting of an 8-bit command word and a 32-bit data-value.
+
+The 32-bit data in the first transaction is the upper 27-bits of the register
+or SMEM address.   These 32-bits must be in LITTLE-ENDIAN order.
+
+The 32-bit data sent in the 2nd transaction of a write must be in LITTLE-ENDIAN 
+order!
+
+The 32-bit data received in the 2nd transaction of read will always be in 
+little endian-order.
+
 */
 
 
@@ -44,7 +56,7 @@ module chip_spi
     input     [ 1:0] start,
     input     [31:0] addr,
     input     [31:0] wdata,
-    output reg[31:0] rdata,
+    output    [31:0] rdata,
     output           busy,
 
 
@@ -110,6 +122,14 @@ localparam TRANSACTION_STRETCH = 3;
 localparam SMEM_READ_STRETCH = 4;
 
 //=============================================================================
+// This function swaps big-endian to little-endian or vice-versa
+//=============================================================================
+function [31:0] byte_swap (input [31:0] value);
+    byte_swap = {value[7:0], value[15:8], value[23:16], value[31:24]};
+endfunction
+//=============================================================================
+
+//=============================================================================
 // We need to do edge detection on "free_clk"
 //=============================================================================
 reg prior_free_clk;
@@ -132,18 +152,18 @@ reg       user_op;
 wire[79:0] transaction =
 {
     // First 40-bit transaction
-    OP_WRITE,               //  1 bit
-    CHIP_SPI_MODE32,        //  1 bit
-    MAP_SELECT_ON,          //  1 bit
-    5'b0,                   //  5 bits
-    5'b0, user_addr[31:5],  // 32 bits
+    OP_WRITE,                            //  1 bit
+    CHIP_SPI_MODE32,                     //  1 bit
+    MAP_SELECT_ON,                       //  1 bit
+    5'b0,                                //  5 bits
+    byte_swap({5'b0, user_addr[31:5]}),  // 32 bits
 
     // Second 40-bit transactions
     user_op,                //  1 bit
     CHIP_SPI_MODE32,        //  1 bit
     MAP_SELECT_OFF,         //  1 bit
     user_addr[4:0],         //  5 bits
-    user_wdata              // 32 bits
+    byte_swap(user_wdata)   // 32 bits
 };
 
 //=============================================================================
@@ -302,14 +322,18 @@ assign busy = start || (fsm_state != FSM_IDLE);
 //=============================================================================
 // We clock in data on the rising edge of spi_clk
 //=============================================================================
+reg[31:0] data_in;
 always @(posedge clk) begin
     if (spi_clk & rising_edge) begin
         if (sim_select)        
-            rdata <= {rdata[30:0], sim_miso};
+            data_in <= {data_in[30:0], sim_miso};
         else
-            rdata <= {rdata[30:0], spi_miso};
+            data_in <= {data_in[30:0], spi_miso};
     end
 end
+
+// The "rdata" port is big-endian
+assign rdata = byte_swap(data_in);
 //=============================================================================
 
 
