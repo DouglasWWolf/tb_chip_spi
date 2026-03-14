@@ -103,23 +103,24 @@ localparam[0:0] MAP_SELECT_OFF = 1'b0;
 //
 // (1) Chip-select assertion to the first rising edge of spi_clk
 // (2) The last falling edge of spi_clk to chip-select release
-// (3) The last rising edge of the 1st transaction to the 1st rising edge
-//     of the 2nd one.
-localparam PORCH_CYCLES = 3;
+localparam PORCH_CYCLES = 1;
 
 // Bits are numbered in MSB-to-LSB in the usual manner - 79 down to 0
-// After bit 40 has been sent, we will stretch the spi_clk to provide
-// a gap between transactions.   Similarly, during an SMEM read, we will
-// provide a gap between the address cycles and data cycles of the read.
+// After bit 40 has been sent, we will suspend the spi_clk to provide
+// a gap between transactions.  
 localparam TRANSACTION_BOUNDARY = 40;
-localparam READ_DATA_BOUNDARY   = 32;
 
-// Between transactions, we will insert idle free_clk cycles
-localparam TRANSACTION_STRETCH = 3;
+// Between transactions, we will insert this many idle free_clk cycles
+localparam TRANSACTION_SUSPEND = 2;
 
-// When reading SMEM, we will insert idle free_clk cycles between the 8 bit
-// SPI command and clocking in the 32-bits of data
-localparam SMEM_READ_STRETCH = 4;
+// During a read of SMEM, we will stretch the spi_clk cycle between the 
+// command-byte and the 32 "data" cycles.
+localparam READ_DATA_BOUNDARY = 32;
+
+// When reading SMEM, we stretch the 8th spi_clk by this many free_clk cycles.
+// We do this in order to give the sensor-chip a chance to read SMEM prior to
+// clocking out the SMEM value to us.
+localparam SMEM_READ_STRETCH = 1;
 
 //=============================================================================
 // This function swaps big-endian to little-endian or vice-versa
@@ -181,8 +182,15 @@ reg[79:0] shift_reg;
 // Keeps track of the bit number that is currently written to spi_mosi
 reg[6:0] bit_number;
 
-// Counts down the falling edge of free_clk
-reg[3:0] sleep;
+// Both of these count down the falling edges of free_clk
+reg[2:0] sleep, suspend_counter;
+
+// This counts down the rising edges of free_clk
+reg[2:0] stretch_counter;
+
+// Keep track of whether spi_clk is current stretched or suspended
+wire spi_clk_suspended = (suspend_counter != 0);
+wire spi_clk_stretched = (stretch_counter != 0);
 
 // When this is asserted, free_clk is driven out to spi_clk
 wire spi_clk_en;
@@ -211,10 +219,20 @@ always @(posedge clk) begin
     if (sleep && falling_edge)
         sleep <= sleep - 1;
 
+    // While this is non-zero, the spi_clk is suspended (i.e., is 0)
+    if (suspend_counter && falling_edge)
+        suspend_counter <= suspend_counter - 1;
+
+    // While this is non-zero, the spi_clk is stretched (i.e., is 1)
+    if (stretch_counter && rising_edge)
+        stretch_counter <= stretch_counter - 1;
+
     // If we're in reset, initialize important signals
     if (resetn == 0) begin
-        fsm_state  <= 0;
-        spi_cs_n   <= RELEASE_CHIP_SELECT;
+        fsm_state       <= 0;
+        stretch_counter <= 0;
+        suspend_counter <= 0;
+        spi_cs_n        <= RELEASE_CHIP_SELECT;
     end
 
     else case(fsm_state)
@@ -265,12 +283,18 @@ always @(posedge clk) begin
             end
         
         FSM_TRANSACT:
-            if (falling_edge && sleep == 0) begin
-                if (bit_number == TRANSACTION_BOUNDARY)
-                    sleep <= TRANSACTION_STRETCH;
 
-                if (bit_number == READ_DATA_BOUNDARY)
-                    sleep <= read_stretch;
+            // If this is the rising edge of the 8th bit (on the 2nd transaction)
+            // then we need to ensure that spi_clk remains high for some number
+            // of free_clk cycles. 
+            if (rising_edge && bit_number == READ_DATA_BOUNDARY && !spi_clk_stretched) begin
+                stretch_counter <= read_stretch;
+            end
+
+            // On falling edges we clock out a new bit to spi_mosi
+            else if (falling_edge & !spi_clk_stretched & !spi_clk_suspended) begin
+                if (bit_number == TRANSACTION_BOUNDARY)
+                    suspend_counter <= TRANSACTION_SUSPEND;
 
                 if (bit_number) begin
                     spi_mosi   <= shift_reg[79];
@@ -308,11 +332,11 @@ always @(posedge clk) begin
 
 end
 
-// spi_clk is enabled during state FSM_TRANSACT while we're not asleep
-assign spi_clk_en = (fsm_state == FSM_TRANSACT) & (sleep == 0);
+// spi_clk is enabled during state FSM_TRANSACT while we're not suspended
+assign spi_clk_en = (fsm_state == FSM_TRANSACT) & !spi_clk_suspended;
 
-// spi_clk is driven from the free-running "free_clk"
-assign spi_clk = free_clk & spi_clk_en;
+// spi_clk is driven from the free-running "free_clk".  
+assign spi_clk = (free_clk & spi_clk_en) | spi_clk_stretched;
 
 // We're busy as soon as we receive a transaction request
 assign busy = start || (fsm_state != FSM_IDLE);
