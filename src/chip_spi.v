@@ -55,8 +55,8 @@ module chip_spi
     //----------------
     input     [ 1:0] start,
     input     [31:0] addr,
-    input     [31:0] wdata,
-    output    [31:0] rdata,
+    input     [31:0] wdata,  /* This must be in little endian! */
+    output reg[31:0] rdata,  /* This will be in little endian! */
     output           busy,
 
 
@@ -120,8 +120,8 @@ localparam READ_DATA_BOUNDARY = 32;
 //=============================================================================
 // This function swaps big-endian to little-endian or vice-versa
 //=============================================================================
-function [31:0] byte_swap (input [31:0] value);
-    byte_swap = {value[7:0], value[15:8], value[23:16], value[31:24]};
+function [31:0] little_endian (input [31:0] value);
+    little_endian = {value[7:0], value[15:8], value[23:16], value[31:24]};
 endfunction
 //=============================================================================
 
@@ -148,18 +148,18 @@ reg       user_op;
 wire[79:0] transaction =
 {
     // First 40-bit transaction
-    OP_WRITE,                            //  1 bit
-    CHIP_SPI_MODE32,                     //  1 bit
-    MAP_SELECT_ON,                       //  1 bit
-    5'b0,                                //  5 bits
-    byte_swap({5'b0, user_addr[31:5]}),  // 32 bits
+    OP_WRITE,                               //  1 bit
+    CHIP_SPI_MODE32,                        //  1 bit
+    MAP_SELECT_ON,                          //  1 bit
+    5'b0,                                   //  5 bits
+    little_endian({5'b0, user_addr[31:5]}), // 32 bits
 
     // Second 40-bit transactions
-    user_op,                //  1 bit
-    CHIP_SPI_MODE32,        //  1 bit
-    MAP_SELECT_OFF,         //  1 bit
-    user_addr[4:0],         //  5 bits
-    byte_swap(user_wdata)   // 32 bits
+    user_op,          //  1 bit
+    CHIP_SPI_MODE32,  //  1 bit
+    MAP_SELECT_OFF,   //  1 bit
+    user_addr[4:0],   //  5 bits
+    user_wdata        // 32 bits
 };
 
 //=============================================================================
@@ -341,18 +341,14 @@ assign busy = start || (fsm_state != FSM_IDLE);
 //=============================================================================
 // We clock in data on the rising edge of spi_clk
 //=============================================================================
-reg[31:0] data_in;
 always @(posedge clk) begin
     if (spi_clk & rising_edge) begin
         if (sim_select)        
-            data_in <= {data_in[30:0], sim_miso};
+            rdata <= {rdata[30:0], sim_miso};
         else
-            data_in <= {data_in[30:0], spi_miso};
+            rdata <= {rdata[30:0], spi_miso};
     end
 end
-
-// The "rdata" port is big-endian
-assign rdata = byte_swap(data_in);
 //=============================================================================
 
 
