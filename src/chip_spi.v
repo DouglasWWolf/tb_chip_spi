@@ -68,12 +68,7 @@ module chip_spi
     output     spi_clk,
     output reg spi_mosi,
     input      spi_miso,
-    output reg spi_cs_n,
-
-    // An input from the chip-simulator's MISO pin, along
-    // with a way to select is as the MISO input
-    input sim_miso,
-    input sim_select
+    output reg spi_cs_n
 );
 
 
@@ -343,10 +338,7 @@ assign busy = start || (fsm_state != FSM_IDLE);
 //=============================================================================
 always @(posedge clk) begin
     if (spi_clk & rising_edge) begin
-        if (sim_select)        
-            rdata <= {rdata[30:0], sim_miso};
-        else
-            rdata <= {rdata[30:0], spi_miso};
+        rdata <= {rdata[30:0], spi_miso};
     end
 end
 //=============================================================================

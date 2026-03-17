@@ -7,7 +7,8 @@
       "name": "top_level",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
       "synth_flow_mode": "Hierarchical",
-      "tool_version": "2021.1"
+      "tool_version": "2021.1",
+      "validated": "true"
     },
     "design_tree": {
       "source_100mhz": {
@@ -25,7 +26,6 @@
       "chip": {
         "spi_ila": "",
         "hsi_ila": "",
-        "one": "",
         "chip_sim": ""
       },
       "hsi_ctl": "",
@@ -41,11 +41,43 @@
     "ports": {
       "CLK100MHZ": {
         "type": "clk",
-        "direction": "I"
+        "direction": "I",
+        "parameters": {
+          "CLK_DOMAIN": {
+            "value": "top_level_CLK100MHZ",
+            "value_src": "default"
+          },
+          "FREQ_HZ": {
+            "value": "100000000",
+            "value_src": "default"
+          },
+          "FREQ_TOLERANCE_HZ": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.0",
+            "value_src": "default"
+          }
+        }
       },
       "CPU_RESETN": {
         "type": "rst",
-        "direction": "I"
+        "direction": "I",
+        "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "POLARITY": {
+            "value": "ACTIVE_LOW",
+            "value_src": "default"
+          }
+        }
       }
     },
     "components": {
@@ -1541,14 +1573,6 @@
           "spi_mosi": {
             "direction": "I"
           },
-          "sim_miso": {
-            "direction": "O"
-          },
-          "spi_free_clk": {
-            "direction": "I",
-            "left": "0",
-            "right": "0"
-          },
           "resetn": {
             "type": "rst",
             "direction": "I"
@@ -1573,9 +1597,10 @@
             "right": "0"
           },
           "spi_miso": {
-            "direction": "O",
-            "left": "0",
-            "right": "0"
+            "direction": "O"
+          },
+          "free_clk": {
+            "direction": "I"
           }
         },
         "components": {
@@ -1610,12 +1635,6 @@
               }
             }
           },
-          "one": {
-            "vlnv": "xilinx.com:ip:xlconstant:1.1",
-            "xci_name": "top_level_xlconstant_0_0",
-            "xci_path": "ip/top_level_xlconstant_0_0/top_level_xlconstant_0_0.xci",
-            "inst_hier_path": "chip/one"
-          },
           "chip_sim": {
             "vlnv": "xilinx.com:module_ref:chip_sim:1.0",
             "xci_name": "top_level_chip_sim_0_0",
@@ -1629,7 +1648,21 @@
             "ports": {
               "clk": {
                 "type": "clk",
-                "direction": "I"
+                "direction": "I",
+                "parameters": {
+                  "FREQ_HZ": {
+                    "value": "100000000",
+                    "value_src": "ip_prop"
+                  },
+                  "PHASE": {
+                    "value": "0.0",
+                    "value_src": "ip_prop"
+                  },
+                  "CLK_DOMAIN": {
+                    "value": "/source_100mhz/system_clock_clk_out1",
+                    "value_src": "ip_prop"
+                  }
+                }
               },
               "resetn": {
                 "type": "rst",
@@ -1643,7 +1676,17 @@
               },
               "spi_clk": {
                 "type": "clk",
-                "direction": "I"
+                "direction": "I",
+                "parameters": {
+                  "FREQ_HZ": {
+                    "value": "10000000",
+                    "value_src": "const_prop"
+                  },
+                  "CLK_DOMAIN": {
+                    "value": "top_level_chip_spi_0_0_spi_clk",
+                    "value_src": "default_prop"
+                  }
+                }
               },
               "spi_mosi": {
                 "direction": "I"
@@ -1656,7 +1699,21 @@
               },
               "hsi_clk": {
                 "type": "clk",
-                "direction": "I"
+                "direction": "I",
+                "parameters": {
+                  "FREQ_HZ": {
+                    "value": "80000000",
+                    "value_src": "ip_prop"
+                  },
+                  "PHASE": {
+                    "value": "0.0",
+                    "value_src": "ip_prop"
+                  },
+                  "CLK_DOMAIN": {
+                    "value": "/source_100mhz/system_clock_clk_out1",
+                    "value_src": "ip_prop"
+                  }
+                }
               },
               "hsi_data": {
                 "direction": "I",
@@ -1673,23 +1730,11 @@
           }
         },
         "nets": {
-          "chip_sim_0_spi_miso": {
+          "chip_sim_spi_miso": {
             "ports": [
               "chip_sim/spi_miso",
-              "sim_miso",
+              "spi_miso",
               "spi_ila/probe3"
-            ]
-          },
-          "chip_sim_square": {
-            "ports": [
-              "one/dout",
-              "spi_miso"
-            ]
-          },
-          "chip_spi_free_clk": {
-            "ports": [
-              "spi_free_clk",
-              "spi_ila/probe4"
             ]
           },
           "chip_spi_spi_clk": {
@@ -1711,6 +1756,12 @@
               "spi_mosi",
               "spi_ila/probe2",
               "chip_sim/spi_mosi"
+            ]
+          },
+          "free_clk_1": {
+            "ports": [
+              "free_clk",
+              "spi_ila/probe4"
             ]
           },
           "hsi_ctl_hsi_cmd": {
@@ -2063,11 +2114,39 @@
         "ports": {
           "hsi_clk": {
             "type": "clk",
-            "direction": "I"
+            "direction": "I",
+            "parameters": {
+              "FREQ_HZ": {
+                "value": "80000000",
+                "value_src": "ip_prop"
+              },
+              "PHASE": {
+                "value": "0.0",
+                "value_src": "ip_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "/source_100mhz/system_clock_clk_out1",
+                "value_src": "ip_prop"
+              }
+            }
           },
           "clk": {
             "type": "clk",
-            "direction": "I"
+            "direction": "I",
+            "parameters": {
+              "FREQ_HZ": {
+                "value": "100000000",
+                "value_src": "ip_prop"
+              },
+              "PHASE": {
+                "value": "0.0",
+                "value_src": "ip_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "/source_100mhz/system_clock_clk_out1",
+                "value_src": "ip_prop"
+              }
+            }
           },
           "resetn": {
             "type": "rst",
@@ -2130,12 +2209,6 @@
           },
           "spi_cs_n": {
             "direction": "O"
-          },
-          "sim_miso": {
-            "direction": "I"
-          },
-          "sim_select": {
-            "direction": "I"
           }
         }
       }
@@ -2173,12 +2246,6 @@
       }
     },
     "nets": {
-      "chip_sim_miso": {
-        "ports": [
-          "chip/sim_miso",
-          "chip_spi/sim_miso"
-        ]
-      },
       "chip_spi_busy": {
         "ports": [
           "chip_spi/busy",
@@ -2224,7 +2291,7 @@
       "chip_spi_free_clk": {
         "ports": [
           "chip_spi/free_clk",
-          "chip/spi_free_clk"
+          "chip/free_clk"
         ]
       },
       "chip_spi_miso": {
@@ -2325,8 +2392,7 @@
       },
       "hsi_ctl_sim_select": {
         "ports": [
-          "hsi_ctl/sim_select",
-          "chip_spi/sim_select"
+          "hsi_ctl/sim_select"
         ]
       },
       "source_100mhz_hsi_clk": {
